@@ -1,0 +1,42 @@
+.translation-history-container {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .history-dropdown {
+    position: absolute;
+    top: 100%;
+    left: -250%;
+    width: fit-content;
+    max-width: 500px;
+    max-height: 300px; /* Adjust the maximum height as needed */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    z-index: 1;
+  }
+  
+  .history-item {
+    padding: 8px 12px;
+    height: fit-content;
+    width: fit-content;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .history-item:last-child {
+    border-bottom: none;
+  }
+  
+  .history-copy-btn{
+    background-color: #0086D5;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+  }

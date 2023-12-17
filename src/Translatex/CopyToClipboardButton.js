@@ -1,6 +1,6 @@
 import React, { useState, useRef} from 'react';
 
-const CopyToClipboardButton = ({ textToCopy }) => {
+const CopyToClipboardButton = ({ textToCopy, textOnButton, buttonClass }) => {
   const [showReminder, setShowReminder] = useState(false);
 
   const textAreaRef = useRef(null);
@@ -24,9 +24,10 @@ const CopyToClipboardButton = ({ textToCopy }) => {
         ref={textAreaRef}
         value={textToCopy}
         style={{ position: 'absolute', left: '-9999px' }}
+        aria-label="invisible textarea for copying text"
         readOnly
       />
-      <button className="copy-btn" onClick={handleCopyClick}>Copy to Clipboard</button>
+      <button className={buttonClass} onClick={handleCopyClick}>{textOnButton}</button>
 
       {showReminder && (
         <div className='copy-text'>

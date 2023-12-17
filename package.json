@@ -1,5 +1,5 @@
 {
-  "homepage": "https://zwang39-1936420.github.io/pui-folder/final-project",
+  "homepage": ".",
   "name": "final-project",
   "version": "0.1.0",
   "private": true,
@@ -13,6 +13,7 @@
     "pyodide": "^0.24.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-image-crop": "^11.0.1",
     "react-latex": "^2.0.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"

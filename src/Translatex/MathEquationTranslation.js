@@ -1,36 +1,40 @@
 import React, {useState, useEffect} from 'react';
-import delete_X from '../assets/Delete X.png';
 import CopyToClipboardButton from './CopyToClipboardButton';
+import TranslationHistory from './TranslationHistory.js';
+import FileUploadArea from './FileUploadArea';
 import './style.css';
 
 function MathEquationTranslation() {
 
-  var Latex = require('react-latex');
+  const ifHasLocalStorage = () => {
+    if(localStorage.getItem("history")){
+        return JSON.parse(localStorage.getItem("history"));
+    } 
+    return [];
+    }
 
   const [responseText, setResponseText] = useState('');
-  const [latexContent, setLatexContent] = useState('E=mc^2');
+  const [imageSrc, setImageSrc] = useState(null);
+  const [timerId, setTimerId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
-  const [token, setToken] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [history, setHistory] = useState(ifHasLocalStorage());
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch('https://translatex-backend-app-3dae282219b5.herokuapp.com/api/data');
-      const result = await response.json();
-      setToken(result.data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+
+  useEffect(() => {
+    // Clear any existing timeout (if it exists)
+    if (timerId) {
+      clearTimeout(timerId);
     }
-  };
+    const newTimerId = setTimeout(() => {
+      setErrorMessage('');
+    }, 3000); // 3 seconds
 
-  
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
+    // Store the new timeout ID in state
+    setTimerId(newTimerId);
+  }, [errorMessage]);
 
-    if (file) {
-      // Update state with the selected file
-      setSelectedFile(file);
-    }
-  };
 
   const handleFileRemove = () => {
     // Remove the selected file by updating state to null
@@ -40,23 +44,16 @@ function MathEquationTranslation() {
   useEffect(() => {
     // Set the Latex Output
     if (responseText !== ''){
-      setLatexContent(responseText.latex_styled);
+      setImageSrc(responseText.image);
     } 
   }, [responseText]);
-
-  //Fetch a token in initial rendering.
-  useEffect(() => {
-    fetchData();
-  }, []);
 
 
   const handlePostRequest = async () => {
     try {
 
-      fetchData();
-      console.log(token);
       const formData = new FormData();
-      formData.append('file', document.getElementById('fileInput').files[0]);
+      formData.append('file', selectedFile);
 
       const options = {
         math_inline_delimiters: ['$', '$'],
@@ -65,84 +62,66 @@ function MathEquationTranslation() {
 
       formData.append('options_json', JSON.stringify(options));
       
-      // const response = await fetch('https://api.mathpix.com/v3/text', {
-      //   method: 'POST',
-      //   body: formData,
-      //   headers: {
-      //     'app_token': token,
-      //   },
-      // });
+      const response = await fetch('http://127.0.0.1:5000/predict', {
+        method: 'POST',
+        body: formData,
+      });
 
-      // if (!response.ok) {
-      //   throw new Error('Network response was not ok');
-      // }
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const responseData = await response.json();
+      console.log(responseData);
+      if (!responseData.error) {
+        setResponseText(responseData);
+        setHistory([responseData.prediction, ...history]);
+      } else {
+        setErrorMessage('Error: ' + responseData.error + "please  try  again!");
+      }
 
-      // const responseData = await response.json();
-      // setResponseText(responseData);
-      // console.log(responseData);
     } catch (error) {
       console.error('Error during POST request:', error);
     }
   };
-
-
   
   return (
     <div className="app-container">
       <nav className="navbar">
-        <div className="logo">Translatex</div>
+        <div className="logo">OCR Recognizer</div>
         <div className="nav-links">
-          <a href="#" className="history-link">History</a>
-          <button className="documentation-btn">Documentation</button>
+          {/* <button className="documentation-btn">History</button> */}
+          <TranslationHistory 
+            history = {history}
+            setHistory = {setHistory}
+          ></TranslationHistory>
         </div>
       </nav>
 
-      <h1>TransLatex, Your Math Career saver</h1>
+      <p id="headline">Upload your handwritten letters to translate into digital format!</p>
 
       <div className="main-content">
-        <div className="input">
-          { selectedFile ? (          
-            <label className="upload-lab">
-              Change file
-              <input
-                type="file"
-                id="fileInput"
-                onChange={handleFileChange}
-                accept="image/*"
-              />
-            </label>) : (
-            <label className="upload-lab">
-              Upload file
-              <input
-                type="file"ß
-                id="fileInput"
-                onChange={handleFileChange}
-                accept="image/*"
-              />
-            </label>)}
-          {selectedFile && <button className="upload-btn" onClick={handlePostRequest}>Submit</button>}
-        </div>
-
-        {selectedFile && (
-          <div className='preview'>
-            <div>
-              <p>Selected Image:</p>
-              <img className='delete' src = {delete_X} onClick={handleFileRemove}/>
-            </div>
-            <img className='preview_img' src={URL.createObjectURL(selectedFile)} alt="Selected" />
-          </div>
-        )}
+        <FileUploadArea 
+          selectedFile={selectedFile}
+          setSelectedFile={setSelectedFile}
+          handlePostRequest={handlePostRequest}
+          isDragOver={isDragOver}
+          setIsDragOver={setIsDragOver}
+          handleFileRemove={handleFileRemove}
+        />
 
         <div className="output">
           <div className="text-box-container">
-            <p className='output-text'>{responseText.latex_styled}</p>
-            <CopyToClipboardButton textToCopy = {responseText.latex_styled}></CopyToClipboardButton>
+            <p className='output-text'>{responseText.prediction}</p>
+            <CopyToClipboardButton textToCopy = {responseText.prediction} buttonClass={"copy-btn"} textOnButton={"Copy"}></CopyToClipboardButton>
           </div>
 
           <div className="text-box-container">
-            <div className='latexOutput'>
-                <p>LaTeX formula preview: </p>
-                <Latex>{`$${latexContent}$`}</Latex>
+            <div>
+                <p>Formula preview: </p>
+                { imageSrc && (
+                  <img className="preview_img" src={`data:image/png;base64,${imageSrc}`} alt="Processed Image" />
+                )}
+                <p>{errorMessage}</p>
             </div>
           </div>
         </div>
